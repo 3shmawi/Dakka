@@ -9,11 +9,11 @@ import 'package:vanguard/core/services/notification_service.dart';
 class ChallengeService extends ChangeNotifier {
   final TaskRepository _taskRepository;
   final NotificationService _notificationService;
-  
+
   Timer? _challengeTimer;
   Challenge? _activeChallenge;
   int _remainingSeconds = 0;
-  
+
   ChallengeService(this._taskRepository, this._notificationService) {
     // Check for overdue/snoozed tasks every 5 minutes
     Timer.periodic(const Duration(minutes: 5), (_) {
@@ -68,7 +68,7 @@ class ChallengeService extends ChangeNotifier {
         createdAt: DateTime.now(),
       );
     }
-    
+
     final random = Random();
     return challenges[random.nextInt(challenges.length)];
   }
@@ -81,21 +81,21 @@ class ChallengeService extends ChangeNotifier {
 
     _activeChallenge = challenge;
     _remainingSeconds = challenge.durationMinutes * 60;
-    
+
     // Mark challenge as active in repository
     await _taskRepository.startChallenge(challenge.id);
-    
+
     // Show challenge notification
     await _notificationService.showChallengeNotification(
       challengeTitle: challenge.title,
       challengeDescription: challenge.description,
       taskId: challenge.taskId,
     );
-    
+
     // Start the countdown timer
     _challengeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _remainingSeconds--;
-      
+
       // Show progress notification at halfway point
       if (_remainingSeconds == (challenge.durationMinutes * 60) ~/ 2) {
         _notificationService.showChallengeProgressNotification(
@@ -103,27 +103,28 @@ class ChallengeService extends ChangeNotifier {
           remainingMinutes: _remainingSeconds ~/ 60,
         );
       }
-      
+
       if (_remainingSeconds <= 0) {
         timer.cancel();
         _handleChallengeTimeout();
       }
-      
+
       notifyListeners();
     });
-    
+
     notifyListeners();
   }
 
   Future<void> completeChallenge() async {
     if (_activeChallenge != null) {
       await _taskRepository.completeChallenge(_activeChallenge!.id);
-      
+
       // Show success notification
-      await _notificationService.showSuccessNotification(_activeChallenge!.title);
-      
+      await _notificationService
+          .showSuccessNotification(_activeChallenge!.title);
+
       await _stopCurrentChallenge();
-      
+
       // Trigger success celebration
       _triggerSuccessCelebration();
     }
@@ -133,7 +134,7 @@ class ChallengeService extends ChangeNotifier {
     if (_activeChallenge != null) {
       await _taskRepository.failChallenge(_activeChallenge!.id);
       await _stopCurrentChallenge();
-      
+
       // Apply penalty if applicable
       if (_activeChallenge!.penalty != null) {
         _applyPenalty(_activeChallenge!.penalty!);
@@ -165,21 +166,23 @@ class ChallengeService extends ChangeNotifier {
   }
 
   void _triggerSuccessCelebration() {
-    // This will be handled by the UI with confetti
+    // This will be handled by the UI with confetti and success widgets
     // Could also trigger haptic feedback here
+    notifyListeners(); // Notify UI to show celebration
   }
 
   void _applyPenalty(String penalty) {
     // Handle penalty logic (e.g., delete low-priority tasks)
     // This is a simplified implementation
     if (penalty.contains('delete') && penalty.contains('low-priority')) {
-      final lowPriorityTasks = _taskRepository.getAllTasks()
-          .where((task) => 
-            task.priority == TaskPriority.low && 
-            task.status != TaskStatus.completed)
+      final lowPriorityTasks = _taskRepository
+          .getAllTasks()
+          .where((task) =>
+              task.priority == TaskPriority.low &&
+              task.status != TaskStatus.completed)
           .take(2)
           .toList();
-      
+
       for (final task in lowPriorityTasks) {
         _taskRepository.deleteTask(task.id);
       }
@@ -188,11 +191,11 @@ class ChallengeService extends ChangeNotifier {
 
   Future<void> _checkForChallengeTriggers() async {
     final tasks = _taskRepository.getAllTasks();
-    
+
     for (final task in tasks) {
       if (task.shouldSuggestChallenge) {
         await _taskRepository.suggestChallengesForTask(task.id);
-        
+
         // Generate and show challenge notification
         final challenge = await getRandomChallengeForTask(task.id);
         await _notificationService.showChallengeNotification(
@@ -206,7 +209,8 @@ class ChallengeService extends ChangeNotifier {
 
   // Method to get suggested challenges for a task
   Future<List<Challenge>> getSuggestedChallenges(String taskId) async {
-    return _taskRepository.getChallengesForTask(taskId)
+    return _taskRepository
+        .getChallengesForTask(taskId)
         .where((c) => c.status == ChallengeStatus.suggested)
         .toList();
   }

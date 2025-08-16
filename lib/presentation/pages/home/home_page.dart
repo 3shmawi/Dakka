@@ -7,6 +7,8 @@ import 'package:vanguard/presentation/widgets/timer_mini_player.dart';
 import 'package:vanguard/presentation/widgets/challenge_bottom_sheet.dart';
 import 'package:vanguard/core/di/service_locator.dart';
 import 'package:vanguard/core/services/theme_service.dart';
+import 'package:vanguard/presentation/pages/settings/settings_page.dart';
+import 'package:vanguard/presentation/pages/task_detail/task_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -110,7 +112,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const Spacer(),
           IconButton(
-            onPressed: () => _showSettingsBottomSheet(context),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            ),
             icon: Icon(
               Icons.settings_outlined,
               color: theme.colorScheme.onPrimaryContainer,
@@ -225,13 +230,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               onComplete: () =>
                   context.read<HomeCubit>().markTaskCompleted(task.id),
               onDelete: () => context.read<HomeCubit>().deleteTask(task.id),
-              onEdit: (updatedTask) =>
-                  context.read<HomeCubit>().updateTask(updatedTask),
+              onEdit: (updatedTask) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TaskDetailPage(task: updatedTask),
+                ),
+              ),
               onStartTimer: () => context.read<HomeCubit>().startTimer(task.id),
               onSnooze: (minutes) =>
                   context.read<HomeCubit>().snoozeTask(task.id, minutes),
               onStartChallenge: (challenge) =>
-                  _showChallengeBottomSheet(context, challenge),
+                  context.read<HomeCubit>().startChallenge(challenge),
               onGenerateChallenge: () =>
                   context.read<HomeCubit>().generateChallengeForTask(task.id),
             ),

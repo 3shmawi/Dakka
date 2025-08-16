@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:vanguard/data/models/task.dart';
 import 'package:vanguard/data/models/challenge.dart';
 import 'package:vanguard/core/di/service_locator.dart';
 import 'package:vanguard/core/services/theme_service.dart';
+import 'package:vanguard/core/services/challenge_service.dart';
 
 class ChallengeBottomSheet extends StatefulWidget {
-  final Challenge challenge;
-  final VoidCallback onStart;
-  final VoidCallback onSkip;
-  final VoidCallback onSwitch;
+  final Task task;
+  final Challenge? challenge;
+  final Function(Challenge) onChallengeStarted;
+  final VoidCallback? onStart;
+  final VoidCallback? onSkip;
+  final VoidCallback? onSwitch;
 
   const ChallengeBottomSheet({
     super.key,
-    required this.challenge,
-    required this.onStart,
-    required this.onSkip,
-    required this.onSwitch,
+    required this.task,
+    this.challenge,
+    required this.onChallengeStarted,
+    this.onStart,
+    this.onSkip,
+    this.onSwitch,
   });
 
   @override
@@ -31,17 +37,17 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
   @override
   void initState() {
     super.initState();
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -49,7 +55,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
       parent: _scaleController,
       curve: Curves.elasticOut,
     ));
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -57,7 +63,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     // Start animations
     _scaleController.forward();
     _slideController.forward();
@@ -74,7 +80,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isRTL = sl<ThemeService>().isRTL;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -131,7 +137,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
               ),
               child: Center(
                 child: Text(
-                  widget.challenge.emoji,
+                  widget.challenge?.emoji ?? '',
                   style: const TextStyle(fontSize: 40),
                 ),
               ),
@@ -139,7 +145,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
           ),
           const SizedBox(height: 16),
           Text(
-            widget.challenge.title,
+            widget.challenge?.title ?? '',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: _getChallengeColor(theme),
@@ -163,7 +169,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${widget.challenge.durationMinutes} ${isRTL ? 'دقيقة' : 'minutes'}',
+                  '${widget.challenge?.durationMinutes} ${isRTL ? 'دقيقة' : 'minutes'}',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: _getChallengeColor(theme),
                     fontWeight: FontWeight.w600,
@@ -177,7 +183,8 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
     );
   }
 
-  Widget _buildChallengeContent(BuildContext context, ThemeData theme, bool isRTL) {
+  Widget _buildChallengeContent(
+      BuildContext context, ThemeData theme, bool isRTL) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -204,17 +211,18 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  widget.challenge.description,
+                  widget.challenge?.description ?? '',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     height: 1.5,
                   ),
                 ),
-                if (widget.challenge.reward != null) ...[
+                if (widget.challenge?.reward != null) ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                      color: theme.colorScheme.secondaryContainer
+                          .withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -237,7 +245,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
                                 ),
                               ),
                               Text(
-                                widget.challenge.reward!,
+                                widget.challenge?.reward ?? '',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSecondaryContainer,
                                 ),
@@ -249,12 +257,13 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
                     ),
                   ),
                 ],
-                if (widget.challenge.penalty != null) ...[
+                if (widget.challenge?.penalty != null) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
+                      color: theme.colorScheme.errorContainer
+                          .withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -277,7 +286,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
                                 ),
                               ),
                               Text(
-                                widget.challenge.penalty!,
+                                widget.challenge?.penalty ?? '',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onErrorContainer,
                                 ),
@@ -300,22 +309,23 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
   }
 
   Widget _buildMotivationalMessage(ThemeData theme, bool isRTL) {
-    final messages = isRTL 
-      ? [
-          'يمكنك فعل ذلك! 💪',
-          'خطوة صغيرة، نتيجة كبيرة! 🚀',
-          'الوقت مناسب للبدء! ⚡',
-          'تحدِ نفسك وانطلق! 🎯',
-        ]
-      : [
-          'You can do this! 💪',
-          'Small step, big result! 🚀',
-          'Perfect time to start! ⚡',
-          'Challenge yourself and go! 🎯',
-        ];
-    
-    final message = messages[DateTime.now().millisecondsSinceEpoch % messages.length];
-    
+    final messages = isRTL
+        ? [
+            'يمكنك فعل ذلك! 💪',
+            'خطوة صغيرة، نتيجة كبيرة! 🚀',
+            'الوقت مناسب للبدء! ⚡',
+            'تحدِ نفسك وانطلق! 🎯',
+          ]
+        : [
+            'You can do this! 💪',
+            'Small step, big result! 🚀',
+            'Perfect time to start! ⚡',
+            'Challenge yourself and go! 🎯',
+          ];
+
+    final message =
+        messages[DateTime.now().millisecondsSinceEpoch % messages.length];
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -334,7 +344,8 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, ThemeData theme, bool isRTL) {
+  Widget _buildActionButtons(
+      BuildContext context, ThemeData theme, bool isRTL) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -343,7 +354,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: () {
-                widget.onStart();
+                widget.onStart?.call();
                 Navigator.of(context).pop();
               },
               icon: const Icon(Icons.play_arrow),
@@ -370,7 +381,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    widget.onSwitch();
+                    widget.onSwitch?.call();
                     Navigator.of(context).pop();
                   },
                   style: OutlinedButton.styleFrom(
@@ -393,7 +404,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
               Expanded(
                 child: TextButton(
                   onPressed: () {
-                    widget.onSkip();
+                    widget.onSkip?.call();
                     Navigator.of(context).pop();
                   },
                   style: TextButton.styleFrom(
@@ -417,7 +428,7 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
   }
 
   Color _getChallengeColor(ThemeData theme) {
-    switch (widget.challenge.type) {
+    switch (widget.challenge?.type) {
       case ChallengeType.sprint:
         return theme.colorScheme.primary;
       case ChallengeType.focus:
@@ -430,7 +441,8 @@ class _ChallengeBottomSheetState extends State<ChallengeBottomSheet>
         return theme.colorScheme.secondary;
       case ChallengeType.timeAttack:
         return Colors.deepOrange;
+      default:
+        return theme.colorScheme.primary;
     }
   }
-
 }

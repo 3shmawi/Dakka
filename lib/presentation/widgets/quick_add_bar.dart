@@ -15,12 +15,20 @@ class QuickAddBar extends StatefulWidget {
   State<QuickAddBar> createState() => _QuickAddBarState();
 }
 
-class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStateMixin {
+class _QuickAddBarState extends State<QuickAddBar>
+    with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _notesController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   bool _isExpanded = false;
+
+  // Advanced task creation state
+  TaskPriority _selectedPriority = TaskPriority.medium;
+  DateTime? _selectedDueDate;
+  List<String> _selectedTags = [];
+  List<String> _notificationOffsets = ['60', '30', '10'];
 
   @override
   void initState() {
@@ -45,14 +53,6 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isRTL = sl<ThemeService>().isRTL;
@@ -68,25 +68,25 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: _isExpanded 
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-                : theme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
+              color: _isExpanded
+                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+                  : theme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: _isExpanded 
-                  ? theme.colorScheme.primary.withValues(alpha: 0.5)
-                  : theme.colorScheme.outline.withValues(alpha: 0.2),
+                color: _isExpanded
+                    ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                    : theme.colorScheme.outline.withValues(alpha: 0.2),
                 width: _isExpanded ? 2 : 1,
               ),
-              boxShadow: _isExpanded 
-                ? [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
+              boxShadow: _isExpanded
+                  ? [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Row(
               children: [
@@ -95,19 +95,20 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _isExpanded 
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.primary.withValues(alpha: 0.8),
+                    color: _isExpanded
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.primary.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: _isExpanded 
-                      ? [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
+                    boxShadow: _isExpanded
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Icon(
                     _isExpanded ? Icons.edit : Icons.add,
@@ -125,9 +126,11 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                       color: theme.colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      hintText: isRTL ? 'اكتب مهمة جديدة...' : 'Type a new task...',
+                      hintText:
+                          isRTL ? 'اكتب مهمة جديدة...' : 'Type a new task...',
                       hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.6),
                       ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
@@ -187,11 +190,11 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
 
   TextDirection _detectTextDirection(String text) {
     if (text.isEmpty) return TextDirection.ltr;
-    
+
     // Simple RTL detection for Arabic characters
     final arabicRegex = RegExp(r'[\u0600-\u06FF]');
     final hasArabic = arabicRegex.hasMatch(text);
-    
+
     return hasArabic ? TextDirection.rtl : TextDirection.ltr;
   }
 
@@ -216,7 +219,7 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
     );
 
     widget.onTaskAdded(task);
-    
+
     // Clear the input
     _controller.clear();
     _focusNode.unfocus();
@@ -227,7 +230,7 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
 
   void _showAddedFeedback(String title) {
     final isRTL = sl<ThemeService>().isRTL;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -265,7 +268,7 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
 
   void _showAdvancedOptions() {
     final isRTL = sl<ThemeService>().isRTL;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -286,12 +289,16 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Text(
                   isRTL ? 'إضافة مهمة جديدة' : 'Add New Task',
                   style: Theme.of(context).textTheme.headlineSmall,
@@ -306,10 +313,13 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                     children: [
                       // Pre-fill title if something was typed
                       TextField(
-                        controller: TextEditingController(text: _controller.text),
+                        controller:
+                            TextEditingController(text: _controller.text),
                         decoration: InputDecoration(
                           labelText: isRTL ? 'عنوان المهمة' : 'Task Title',
-                          hintText: isRTL ? 'اكتب عنوان المهمة...' : 'Enter task title...',
+                          hintText: isRTL
+                              ? 'اكتب عنوان المهمة...'
+                              : 'Enter task title...',
                           border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                           ),
@@ -318,8 +328,10 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 16),
                       TextField(
+                        controller: _notesController,
                         decoration: InputDecoration(
-                          labelText: isRTL ? 'ملاحظات (اختيارية)' : 'Notes (Optional)',
+                          labelText:
+                              isRTL ? 'ملاحظات (اختيارية)' : 'Notes (Optional)',
                           hintText: isRTL ? 'أضف ملاحظات...' : 'Add notes...',
                           border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -336,11 +348,14 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          _buildPriorityChip(TaskPriority.high, isRTL ? 'عالية' : 'High', Colors.red),
+                          _buildPriorityChip(TaskPriority.high,
+                              isRTL ? 'عالية' : 'High', Colors.red),
                           const SizedBox(width: 8),
-                          _buildPriorityChip(TaskPriority.medium, isRTL ? 'متوسطة' : 'Medium', Colors.orange),
+                          _buildPriorityChip(TaskPriority.medium,
+                              isRTL ? 'متوسطة' : 'Medium', Colors.orange),
                           const SizedBox(width: 8),
-                          _buildPriorityChip(TaskPriority.low, isRTL ? 'منخفضة' : 'Low', Colors.green),
+                          _buildPriorityChip(TaskPriority.low,
+                              isRTL ? 'منخفضة' : 'Low', Colors.green),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -349,10 +364,7 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
                         child: FilledButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            // TODO: Create task with advanced options
-                            if (_controller.text.isNotEmpty) {
-                              _addTask();
-                            }
+                            _addAdvancedTask();
                           },
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -389,12 +401,67 @@ class _QuickAddBarState extends State<QuickAddBar> with SingleTickerProviderStat
           fontWeight: FontWeight.w500,
         ),
       ),
-      selected: false, // TODO: Track selected priority
+      selected: _selectedPriority == priority,
       onSelected: (selected) {
-        // TODO: Update selected priority
+        if (selected) {
+          setState(() {
+            _selectedPriority = priority;
+          });
+        }
       },
       side: BorderSide(color: color.withValues(alpha: 0.5)),
       backgroundColor: color.withValues(alpha: 0.1),
     );
+  }
+
+  void _addAdvancedTask() {
+    final title = _controller.text.trim();
+    if (title.isEmpty) return;
+
+    // Animate button press
+    _animationController.forward().then((_) {
+      _animationController.reverse();
+    });
+
+    // Create new task with advanced options
+    final now = DateTime.now();
+    final task = Task(
+      id: 'task_${now.millisecondsSinceEpoch}',
+      title: title,
+      notes: _notesController.text.trim(),
+      createdAt: now,
+      updatedAt: now,
+      priority: _selectedPriority,
+      dueDate: _selectedDueDate,
+      tags: List.from(_selectedTags),
+      notificationOffsets: List.from(_notificationOffsets),
+    );
+
+    widget.onTaskAdded(task);
+
+    // Clear all inputs
+    _controller.clear();
+    _notesController.clear();
+    _focusNode.unfocus();
+
+    // Reset advanced options
+    setState(() {
+      _selectedPriority = TaskPriority.medium;
+      _selectedDueDate = null;
+      _selectedTags.clear();
+      _notificationOffsets = ['60', '30', '10'];
+    });
+
+    // Show feedback
+    _showAddedFeedback(title);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _notesController.dispose();
+    _focusNode.dispose();
+    _animationController.dispose();
+    super.dispose();
   }
 }

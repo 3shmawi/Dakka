@@ -1,0 +1,36 @@
+name: vanguard
+description: "Dakka is your ultimate productivity companion, blending a sleek To-Do app with smart notifications, a built-in task timer, and a unique \\\"Challenge\\\" system to keep you motivated and on track!"
+publish_to: "none"
+version: 1.0.0
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  flutter_bloc: ^8.1.3
+  equatable: ^2.0.5
+  get_it: ^7.6.4
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  intl: ^0.20.2
+  shared_preferences: ^2.2.2
+  awesome_notifications: ^0.10.1
+
+dependency_overrides:
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  hive_generator: ^1.1.3
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
